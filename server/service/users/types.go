@@ -13,9 +13,9 @@ type User struct {
 }
 
 type UserPayload struct {
-	ID       int64  `db:"id"`
-	Username string `db:"username"`
-	Email    string `db:"email"`
+	ID       int64  `json:"id"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
 }
 
 type RegisterPayload struct {

@@ -92,7 +92,16 @@ func (h *UserHandler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.setCookiesAndSession(user, w, r)
+	u := &UserPayload{
+		ID:       user.ID,
+		Username: user.Username,
+		Email:    user.Email,
+	}
 	w.Header().Add("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(u); err != nil {
+		http.Error(w, "error getting user", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *UserHandler) logout(w http.ResponseWriter, r *http.Request) {

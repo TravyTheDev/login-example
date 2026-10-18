@@ -6,6 +6,7 @@ import (
 	"net/http"
 )
 
+// not todo but when deploy secure: true
 func SetCookieHandler(w http.ResponseWriter, r *http.Request, token string, duration int, name string) {
 	cookie := http.Cookie{
 		Name:     name,
@@ -13,7 +14,7 @@ func SetCookieHandler(w http.ResponseWriter, r *http.Request, token string, dura
 		Path:     "/",
 		MaxAge:   duration,
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   false,
 		SameSite: http.SameSiteLaxMode,
 	}
 	http.SetCookie(w, &cookie)
