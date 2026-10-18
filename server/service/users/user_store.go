@@ -34,6 +34,8 @@ func (s *UserStore) GetUserByEmail(email string) (*User, error) {
 		return nil, err
 	}
 
+	defer rows.Close()
+
 	user := new(User)
 	for rows.Next() {
 		user, err = scanRowsIntoUser(rows)
@@ -48,21 +50,28 @@ func (s *UserStore) GetUserByEmail(email string) (*User, error) {
 	return user, nil
 }
 
-func (s *UserStore) CreateSession(session *Session) (*Session, error) {
-	stmt := `INSERT INTO sessions (id, user_email, refresh_token, is_revoked, expires_at) VALUES (?, ?, ?, ?, ?)`
+func (s *UserStore) getUserByID(id int) (*User, error) {
+	stmt := `SELECT * FROM users WHERE id = ?`
 
-	_, err := s.db.Exec(
-		stmt, session.ID,
-		session.UserEmail,
-		session.RefreshToken,
-		session.IsRevoked,
-		session.ExpiresAt,
-	)
+	rows, err := s.db.Query(stmt, id)
 	if err != nil {
-		return nil, fmt.Errorf("error inserting session: %w", err)
+		return nil, err
 	}
 
-	return session, nil
+	defer rows.Close()
+
+	user := new(User)
+	for rows.Next() {
+		user, err = scanRowsIntoUser(rows)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if user.ID == 0 {
+		return nil, fmt.Errorf("user not found")
+	}
+	return user, nil
 }
 
 func scanRowsIntoUser(rows *sql.Rows) (*User, error) {

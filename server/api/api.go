@@ -3,6 +3,8 @@ package api
 import (
 	"database/sql"
 	"fmt"
+	"login-example/libs/jwt"
+	"login-example/service/users"
 	"net/http"
 	"os"
 
@@ -26,8 +28,10 @@ func (s *APIServer) Run() error {
 	secretKey := os.Getenv("JWT_KEY")
 	router := http.NewServeMux()
 
+	sessionStore := jwt.NewSessionStore(s.db)
+
 	userStore := users.NewUserStore(s.db)
-	usersHandler := users.NewUserHandler(userStore, secretKey)
+	usersHandler := users.NewUserHandler(userStore, sessionStore, secretKey)
 	usersHandler.RegisterRoutes(router)
 
 	c := cors.New(cors.Options{

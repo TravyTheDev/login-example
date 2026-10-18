@@ -3,7 +3,7 @@ package users
 import (
 	"encoding/json"
 	"fmt"
-	"login-example/service/jwt"
+	"login-example/libs/jwt"
 	"login-example/utils"
 	"net/http"
 	"time"
@@ -15,20 +15,25 @@ const accessDuration = time.Minute * 15
 const refreshDuration = 24 * time.Hour
 
 type UserHandler struct {
-	store    *UserStore
-	jwtMaker *jwt.JWTMaker
+	store        *UserStore
+	sessionStore *jwt.SessionStore
+	jwtMaker     *jwt.JWTMaker
 }
 
-func NewUserHandler(store *UserStore, secretKey string) *UserHandler {
+func NewUserHandler(store *UserStore, sessionStore *jwt.SessionStore, secretKey string) *UserHandler {
 	return &UserHandler{
-		store:    store,
-		jwtMaker: jwt.NewJWTMaker(secretKey),
+		store:        store,
+		sessionStore: sessionStore,
+		jwtMaker:     jwt.NewJWTMaker(secretKey),
 	}
 }
 
 func (h *UserHandler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("POST /users/register", h.register)
 	router.HandleFunc("POST /users/login", h.login)
+	router.HandleFunc("POST /users/renew_token", h.renewAccessToken)
+	router.HandleFunc("POST /users/me", jwt.GetAuthMiddlewareFunc(h.jwtMaker, h.getUserByID))
+	router.HandleFunc("POST /users/logout", h.logout)
 }
 
 func (h *UserHandler) register(w http.ResponseWriter, r *http.Request) {
@@ -90,6 +95,88 @@ func (h *UserHandler) login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 }
 
+func (h *UserHandler) logout(w http.ResponseWriter, r *http.Request) {
+	cookie := jwt.GetCookieHandler(w, r, "refresh")
+	claims, err := h.jwtMaker.VerifyToken(cookie)
+	if err != nil {
+		http.Error(w, "error verifying token", http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.sessionStore.DeleteSession(claims.RegisteredClaims.ID); err != nil {
+		http.Error(w, "error deleting session", http.StatusInternalServerError)
+		return
+	}
+	jwt.DeleteCookieHandler(w, r, "authentication")
+	jwt.DeleteCookieHandler(w, r, "refresh")
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *UserHandler) getUserByID(w http.ResponseWriter, r *http.Request) {
+	userClains := r.Context().Value(jwt.AuthKey{}).(*jwt.UserClaims)
+
+	userID := userClains.ID
+
+	user, err := h.store.getUserByID(userID)
+	if err != nil {
+		http.Error(w, "error getting user", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(user); err != nil {
+		http.Error(w, "error getting user", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *UserHandler) renewAccessToken(w http.ResponseWriter, r *http.Request) {
+
+	refreshToken := jwt.GetCookieHandler(w, r, "refresh")
+
+	refreshClaims, err := h.jwtMaker.VerifyToken(refreshToken)
+	if err != nil {
+		http.Error(w, "error verifying token", http.StatusUnauthorized)
+		return
+	}
+
+	session, err := h.sessionStore.GetSession(refreshClaims.RegisteredClaims.ID)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "error getting sessions", http.StatusInternalServerError)
+		return
+	}
+
+	if session.IsRevoked {
+		http.Error(w, "session revoked", http.StatusUnauthorized)
+		return
+	}
+
+	if session.UserEmail != refreshClaims.Email {
+		http.Error(w, "session revoked", http.StatusUnauthorized)
+		return
+	}
+
+	var duration = time.Minute * 15
+
+	accessToken, _, err := h.jwtMaker.CreateToken(
+		refreshClaims.ID,
+		refreshClaims.Username,
+		refreshClaims.Email,
+		refreshClaims.Role,
+		duration,
+	)
+	if err != nil {
+		http.Error(w, "error creating token", http.StatusInternalServerError)
+		return
+	}
+
+	jwt.SetCookieHandler(w, r, accessToken, int(duration.Seconds()), "authentication")
+
+}
+
 func (h *UserHandler) setCookiesAndSession(user *User, w http.ResponseWriter, r *http.Request) {
 	accessToken, _, err := h.jwtMaker.CreateToken(
 		int(user.ID),
@@ -113,7 +200,7 @@ func (h *UserHandler) setCookiesAndSession(user *User, w http.ResponseWriter, r 
 		http.Error(w, "error creating token", http.StatusInternalServerError)
 		return
 	}
-	sesh := &Session{
+	sesh := &jwt.Session{
 		ID:           refreshClaims.RegisteredClaims.ID,
 		UserEmail:    user.Email,
 		RefreshToken: refreshToken,
@@ -122,12 +209,12 @@ func (h *UserHandler) setCookiesAndSession(user *User, w http.ResponseWriter, r 
 		ExpiresAt:    refreshClaims.ExpiresAt.Time,
 	}
 
-	_, err = h.store.CreateSession(sesh)
+	_, err = h.sessionStore.CreateSession(sesh)
 	if err != nil {
 		http.Error(w, "error creating session", http.StatusInternalServerError)
 		return
 	}
 
-	jwt.SetCookieHandler(w, r, accessToken, int(accessDuration), "authentication")
-	jwt.SetCookieHandler(w, r, refreshToken, int(refreshDuration), "refresh")
+	jwt.SetCookieHandler(w, r, accessToken, int(accessDuration.Seconds()), "authentication")
+	jwt.SetCookieHandler(w, r, refreshToken, int(refreshDuration.Seconds()), "refresh")
 }
