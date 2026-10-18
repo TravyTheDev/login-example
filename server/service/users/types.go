@@ -12,6 +12,12 @@ type User struct {
 	UpdatedAt time.Time `db:"updated_at"`
 }
 
+type UserPayload struct {
+	ID       int64  `db:"id"`
+	Username string `db:"username"`
+	Email    string `db:"email"`
+}
+
 type RegisterPayload struct {
 	Username        string `json:"username"`
 	Email           string `json:"email"`
@@ -22,13 +28,4 @@ type RegisterPayload struct {
 type LoginUserPayload struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
-}
-
-type Session struct {
-	ID           string    `db:"id"`
-	UserEmail    string    `db:"user_email"`
-	RefreshToken string    `db:"refresh_token"`
-	IsRevoked    bool      `db:"is_revoked"`
-	CreatedAt    time.Time `db:"created_at"`
-	ExpiresAt    time.Time `db:"expires_at"`
 }

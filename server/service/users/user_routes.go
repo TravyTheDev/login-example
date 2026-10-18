@@ -32,8 +32,8 @@ func (h *UserHandler) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("POST /users/register", h.register)
 	router.HandleFunc("POST /users/login", h.login)
 	router.HandleFunc("POST /users/renew_token", h.renewAccessToken)
-	router.HandleFunc("POST /users/me", jwt.GetAuthMiddlewareFunc(h.jwtMaker, h.getUserByID))
 	router.HandleFunc("POST /users/logout", h.logout)
+	router.HandleFunc("GET /users/me", jwt.GetAuthMiddlewareFunc(h.jwtMaker, h.getUserByID))
 }
 
 func (h *UserHandler) register(w http.ResponseWriter, r *http.Request) {
@@ -123,10 +123,16 @@ func (h *UserHandler) getUserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	u := &UserPayload{
+		ID:       user.ID,
+		Username: user.Username,
+		Email:    user.Email,
+	}
+
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	if err := json.NewEncoder(w).Encode(user); err != nil {
+	if err := json.NewEncoder(w).Encode(u); err != nil {
 		http.Error(w, "error getting user", http.StatusInternalServerError)
 		return
 	}
@@ -144,7 +150,6 @@ func (h *UserHandler) renewAccessToken(w http.ResponseWriter, r *http.Request) {
 
 	session, err := h.sessionStore.GetSession(refreshClaims.RegisteredClaims.ID)
 	if err != nil {
-		fmt.Println(err)
 		http.Error(w, "error getting sessions", http.StatusInternalServerError)
 		return
 	}

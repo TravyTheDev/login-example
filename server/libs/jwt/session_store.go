@@ -30,7 +30,11 @@ func (st *SessionStore) GetSession(id string) (*Session, error) {
 	stmt := `SELECT * FROM sessions WHERE id = ?`
 
 	rows, err := st.db.Query(stmt, id)
-	if err != nil || err == rows.Err() {
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
