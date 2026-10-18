@@ -6,7 +6,6 @@ export const Route = createFileRoute('/login')({
     redirect: (search.redirect as string) || '/',
   }),
   beforeLoad: ({ context, search }) => {
-    // Redirect if already authenticated
     if (context.auth.isAuthenticated) {
       throw redirect({ to: search.redirect })
     }
@@ -29,9 +28,8 @@ function LoginComponent() {
 
     try {
       await auth.login(email, password)
-      navigate({ to: '/authenticated/mypage' })
+      navigate({ to: '/mypage' })
     } catch (err) {
-        console.log(err)
       setError('Invalid email or password')
     } finally {
       setIsLoading(false)

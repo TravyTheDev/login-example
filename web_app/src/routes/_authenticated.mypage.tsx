@@ -1,6 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/authenticated/mypage')({
+export const Route = createFileRoute('/_authenticated/mypage')({
   component: RouteComponent,
 })
 
@@ -34,5 +34,6 @@ function RouteComponent() {
         </p>
         <p className="text-sm text-gray-500 mt-2">Email: {auth.user?.email}</p>
       </div>
+      <Link to='/'>Home</Link>
     </div>
 }

@@ -10,9 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedRouteImport } from './routes/authenticated'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as AuthenticatedMypageRouteImport } from './routes/authenticated/mypage'
+import { Route as AuthenticatedMypageRouteImport } from './routes/_authenticated.mypage'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -20,8 +20,7 @@ const IndexRoute = IndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
-  id: '/authenticated',
-  path: '/authenticated',
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -37,29 +36,27 @@ const AuthenticatedMypageRoute = AuthenticatedMypageRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
-  '/authenticated/mypage': typeof AuthenticatedMypageRoute
+  '/mypage': typeof AuthenticatedMypageRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
-  '/authenticated/mypage': typeof AuthenticatedMypageRoute
+  '/mypage': typeof AuthenticatedMypageRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/authenticated': typeof AuthenticatedRouteWithChildren
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
-  '/authenticated/mypage': typeof AuthenticatedMypageRoute
+  '/_authenticated/mypage': typeof AuthenticatedMypageRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/authenticated' | '/login' | '/authenticated/mypage'
+  fullPaths: '/' | '/login' | '/mypage'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/authenticated' | '/login' | '/authenticated/mypage'
-  id: '__root__' | '/' | '/authenticated' | '/login' | '/authenticated/mypage'
+  to: '/' | '/login' | '/mypage'
+  id: '__root__' | '/' | '/_authenticated' | '/login' | '/_authenticated/mypage'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,10 +74,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/authenticated': {
-      id: '/authenticated'
-      path: '/authenticated'
-      fullPath: '/authenticated'
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -91,10 +88,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/authenticated/mypage': {
-      id: '/authenticated/mypage'
+    '/_authenticated/mypage': {
+      id: '/_authenticated/mypage'
       path: '/mypage'
-      fullPath: '/authenticated/mypage'
+      fullPath: '/mypage'
       preLoaderRoute: typeof AuthenticatedMypageRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
