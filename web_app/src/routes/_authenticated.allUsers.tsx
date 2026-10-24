@@ -38,9 +38,9 @@ function RouteComponent() {
         }
     }
 
-  return (<div>
+  return (<div className='flex flex-col gap-1 items-start'>
     {users?.map((user) => (
-        <button key={user.email} onClick={() => loginAsUser(user)}>{user.username}</button>
+        <button className='hover:cursor-pointer' key={user.email} onClick={() => loginAsUser(user)}>{user.username}</button>
     ))}
   </div>)
 }

@@ -15,7 +15,10 @@ function Home() {
           <Link to='/mypage'>{auth.user?.username}</Link>
         </div>
         :
-      <Link to='/login' search={{redirect: '/mypage'}}>Login</Link>
+      <div className="flex flex-col gap-1 items-start font-semibold">
+        <Link to='/login' search={{redirect: '/login'}}>Login</Link>
+        <Link to='/register' search={{redirect: '/register'}}>Register</Link>
+      </div>
       }
     </div>
   )
