@@ -13,7 +13,6 @@ type User = {
 
 function RouteComponent() {
     const { auth } = Route.useRouteContext()
-    const navigate = Route.useNavigate()
     const [users, setUsers] = useState<User[]>()
 
     const loadAllUsers = async () => {
@@ -22,7 +21,7 @@ function RouteComponent() {
             const users = await res.json()
             setUsers(users)
         } catch (error) {
-            console.log(error)
+            throw new Error('failed to load users')
         }
     }
 
@@ -32,10 +31,10 @@ function RouteComponent() {
 
     const loginAsUser = async (user: User) => {
         try {
-            auth.loginAs(user.email)
-            navigate({ to: '/' })
+            await auth.loginAs(user.email)
+            window.location.href = '/'
         } catch (error) {
-            console.log(error)
+            throw new Error('failed login as')
         }
     }
 

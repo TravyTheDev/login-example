@@ -33,12 +33,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const getMe = async () => {
     try {
         const res = await apiFetch('/users/me')
-        
+  
         if (!res.ok) {
             throw new Error('Failed to fetch user profile')
         }
         const user = await res.json()
-        console.log(user)
         setUser(user)
         setIsAuthenticated(true)
     } catch (error) {
@@ -84,17 +83,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const loginAs = async (email: string) => {
-    const response = await apiFetch('/auth/login_as', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targetEmail: email }),
-    })
-    if (response.ok) {
-      const userData = await response.json()
-      console.log(userData, 'hey')
-      setUser(userData)
-      setIsAuthenticated(true)
-    } else {
+    try {
+      await apiFetch('/auth/login_as', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetEmail: email }),
+      })
+    } catch (error) {
       throw new Error('loginAs failed')
     }
   }

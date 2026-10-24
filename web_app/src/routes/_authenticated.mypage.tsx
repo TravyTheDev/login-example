@@ -11,16 +11,13 @@ function RouteComponent() {
   const logout = () => {
     try {
       if (auth.user?.impersonatedBy) {
-        console.log('hello')
         auth.logoutFromLoginAs()
         navigate({ to: '/' })
       } else {
-        console.log('no')
         auth.logout()
         navigate({ to: '/' })
       }
     } catch (error) {
-      console.log(error)
       throw new Error('failed to logout')
     }
   }
