@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"login-example/libs/jwt"
+	"login-example/service/auth"
 	"login-example/service/users"
 	"net/http"
 	"os"
@@ -28,10 +29,14 @@ func (s *APIServer) Run() error {
 	secretKey := os.Getenv("JWT_KEY")
 	router := http.NewServeMux()
 
-	sessionStore := jwt.NewSessionStore(s.db)
+	jwtMaker := jwt.NewJWTMaker(secretKey)
+
+	authStore := auth.NewAuthStore(s.db)
+	authHandler := auth.NewAuthHandler(authStore, jwtMaker)
+	authHandler.RegisterRoutes(router)
 
 	userStore := users.NewUserStore(s.db)
-	usersHandler := users.NewUserHandler(userStore, sessionStore, secretKey)
+	usersHandler := users.NewUserHandler(userStore, jwtMaker)
 	usersHandler.RegisterRoutes(router)
 
 	c := cors.New(cors.Options{

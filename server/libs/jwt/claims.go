@@ -33,3 +33,31 @@ func NewUserClaims(
 		},
 	}, nil
 }
+
+func NewImpersonatedUserClaims(
+	targetID int,
+	targetUsername string,
+	targetEmail string,
+	targetRole int8,
+	impersonatedByUser ImpersonatedByUser,
+	duration time.Duration,
+) (*UserClaims, error) {
+	token, err := uuid.NewRandom()
+	if err != nil {
+		return nil, fmt.Errorf("error generating token ID: %w", err)
+	}
+
+	return &UserClaims{
+		ID:             targetID,
+		Username:       targetUsername,
+		Email:          targetEmail,
+		Role:           targetRole,
+		ImpersonatedBy: &impersonatedByUser,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        token.String(),
+			Subject:   targetEmail,
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(duration)),
+		},
+	}, nil
+}

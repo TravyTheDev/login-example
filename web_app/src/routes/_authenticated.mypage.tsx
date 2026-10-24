@@ -1,3 +1,4 @@
+import { useAuth } from '#/auth'
 import { createFileRoute, Link } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_authenticated/mypage')({
@@ -5,13 +6,21 @@ export const Route = createFileRoute('/_authenticated/mypage')({
 })
 
 function RouteComponent() {
-  const { auth } = Route.useRouteContext()
+  const auth = useAuth()
   const navigate = Route.useNavigate()
   const logout = () => {
     try {
-      auth.logout()
-      navigate({ to: '/' })
+      if (auth.user?.impersonatedBy) {
+        console.log('hello')
+        auth.logoutFromLoginAs()
+        navigate({ to: '/' })
+      } else {
+        console.log('no')
+        auth.logout()
+        navigate({ to: '/' })
+      }
     } catch (error) {
+      console.log(error)
       throw new Error('failed to logout')
     }
   }
@@ -34,6 +43,9 @@ function RouteComponent() {
         </p>
         <p className="text-sm text-gray-500 mt-2">Email: {auth.user?.email}</p>
       </div>
-      <Link to='/'>Home</Link>
+      <div>
+        <Link to='/'>Home</Link>
+      </div>
+      <Link to='/allUsers'>Login in as other users</Link>
     </div>
 }

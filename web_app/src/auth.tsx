@@ -1,17 +1,26 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { apiFetch } from './apiFetch'
 
-interface User {
+export type ImpersonatedByUser = {
   id: string
   username: string
   email: string
 }
 
-interface AuthState {
+interface User {
+  id: string
+  username: string
+  email: string
+  impersonatedBy?: ImpersonatedByUser
+}
+
+export interface AuthState {
   isAuthenticated: boolean
   user: User | null
   login: (email: string, password: string) => Promise<void>
   logout: () => void
+  loginAs: (email: string) => Promise<void> 
+  logoutFromLoginAs: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined)
@@ -29,6 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             throw new Error('Failed to fetch user profile')
         }
         const user = await res.json()
+        console.log(user)
         setUser(user)
         setIsAuthenticated(true)
     } catch (error) {
@@ -52,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const login = async (email: string, password: string) => {
-    const response = await apiFetch('/users/login', {
+    const response = await apiFetch('/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -68,13 +78,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const logout = async () => {
-    await apiFetch('/users/logout', {method: 'POST'})
+    await apiFetch('/auth/logout', {method: 'POST'})
     setUser(null)
     setIsAuthenticated(false)
   }
 
+  const loginAs = async (email: string) => {
+    const response = await apiFetch('/auth/login_as', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetEmail: email }),
+    })
+    if (response.ok) {
+      const userData = await response.json()
+      console.log(userData, 'hey')
+      setUser(userData)
+      setIsAuthenticated(true)
+    } else {
+      throw new Error('loginAs failed')
+    }
+  }
+
+  const logoutFromLoginAs = async () => {
+    const response = await apiFetch('/auth/logout_from_loginAs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+    
+    if (response.ok) {
+      const userData = await response.json()
+      setUser(userData)
+      setIsAuthenticated(true)
+    } else {
+      throw new Error('Authentication failed')
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, loginAs, logoutFromLoginAs }}>
       {children}
     </AuthContext.Provider>
   )

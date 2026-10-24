@@ -38,6 +38,28 @@ func (j *JWTMaker) CreateToken(
 	return tokenStr, claims, nil
 }
 
+func (j *JWTMaker) CreateImpersonationToken(
+	id int,
+	username string,
+	email string,
+	role int8,
+	impersonatedBy ImpersonatedByUser,
+	duration time.Duration,
+) (string, *UserClaims, error) {
+	claims, err := NewImpersonatedUserClaims(id, username, email, role, impersonatedBy, duration)
+	if err != nil {
+		return "", nil, err
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenStr, err := token.SignedString([]byte(j.secretKey))
+	if err != nil {
+		return "", nil, fmt.Errorf("error signing token: %w", err)
+	}
+
+	return tokenStr, claims, nil
+}
+
 func (j *JWTMaker) VerifyToken(tokenStr string) (*UserClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &UserClaims{}, func(t *jwt.Token) (any, error) {
 		_, ok := t.Method.(*jwt.SigningMethodHMAC)

@@ -14,7 +14,7 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}): Pro
 
   if (response.status === 401 && !endpoint.includes('/renew_token')) {
     try {
-      const refreshResponse = await fetch(`${API_BASE}/users/renew_token`, {
+      const refreshResponse = await fetch(`${API_BASE}/auth/renew_token`, {
         method: 'POST',
         credentials: 'include',
       })

@@ -15,43 +15,8 @@ func NewUserStore(db *sql.DB) *UserStore {
 	}
 }
 
-func (s UserStore) CreateUser(user User) error {
-	stmt := `INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)`
-
-	_, err := s.db.Exec(stmt, user.Username, user.Email, user.Password, user.Role)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *UserStore) GetUserByEmail(email string) (*User, error) {
-	stmt := `SELECT * FROM users WHERE email = ?`
-
-	rows, err := s.db.Query(stmt, email)
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	user := new(User)
-	for rows.Next() {
-		user, err = scanRowsIntoUser(rows)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if user.ID == 0 {
-		return nil, fmt.Errorf("user not found")
-	}
-	return user, nil
-}
-
-func (s *UserStore) getUserByID(id int) (*User, error) {
-	stmt := `SELECT * FROM users WHERE id = ?`
+func (s *UserStore) getUserByID(id int) (*UserPayload, error) {
+	stmt := `SELECT users.id, users.username, users.email FROM users WHERE id = ?`
 
 	rows, err := s.db.Query(stmt, id)
 	if err != nil {
@@ -60,7 +25,7 @@ func (s *UserStore) getUserByID(id int) (*User, error) {
 
 	defer rows.Close()
 
-	user := new(User)
+	user := new(UserPayload)
 	for rows.Next() {
 		user, err = scanRowsIntoUser(rows)
 		if err != nil {
@@ -74,16 +39,37 @@ func (s *UserStore) getUserByID(id int) (*User, error) {
 	return user, nil
 }
 
-func scanRowsIntoUser(rows *sql.Rows) (*User, error) {
-	user := new(User)
+func (s *UserStore) getAllUsers() ([]*UserPayload, error) {
+	stmt := `SELECT users.id, users.username, users.email FROM users`
+
+	rows, err := s.db.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	users := make([]*UserPayload, 0)
+	for rows.Next() {
+		user, err := scanRowsIntoUser(rows)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+func scanRowsIntoUser(rows *sql.Rows) (*UserPayload, error) {
+	user := new(UserPayload)
 	err := rows.Scan(
 		&user.ID,
 		&user.Username,
 		&user.Email,
-		&user.Password,
-		&user.Role,
-		&user.CreatedAt,
-		&user.UpdatedAt,
 	)
 
 	if err != nil {
