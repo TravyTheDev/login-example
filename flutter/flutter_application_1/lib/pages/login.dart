@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/api_client.dart';
 import 'package:flutter_application_1/auth/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -22,7 +23,7 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  Future _handleLogin(AuthProvider authProvider) async {
+  Future _handleLogin() async {
     final email = _emailController.text;
     final password = _passwordController.text;
 
@@ -30,15 +31,10 @@ class _LoginPageState extends State<LoginPage> {
     debugPrint('Password: $password');
 
     try {
-        final response = await authProvider.handleLogin(email, password);
-
-      if (response.statusCode == 200) {
-        debugPrint('Login successful!');
-
+        await context.read<AuthProvider>().handleLogin(email, password);
         if (mounted) {
           Navigator.pop(context);
         }
-      }
       } catch (e) {
         debugPrint('Login error: $e');
       }

@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/auth/user_model.dart';
 import 'package:flutter_application_1/api_client.dart';
@@ -13,31 +11,26 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoggedIn => _user != null;
 
   Future handleLogin(String email, String password) async {
-    // final email = _emailController.text;
-    // final password = _passwordController.text;
-
     debugPrint('Email: $email');
     debugPrint('Password: $password');
-
+    _isLoading = true;
     try {
-        final response = await ApiClient.instance.post(
+      final response = await ApiClient.instance.post(
         '/auth/login',
-        data: {
-          'email': email,
-          'password': password,
-        },
+        data: {'email': email, 'password': password},
       );
-
       if (response.statusCode == 200) {
-        debugPrint('Login successful!');
+        final json = response.data as Map<String, dynamic>;
+        final user = User.fromJson(json);
 
-        // if (mounted) {
-        //   Navigator.pop(context);
-        // }
+        _user = user;
+        return user;
       }
-      } catch (e) {
-        debugPrint('Login error: $e');
-      }
+    } catch (e) {
+      debugPrint('Login error: $e');
+    } finally {
+      _isLoading = false;
+    }
   }
 
   Future<User> fetchUser() async {
@@ -45,15 +38,20 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await ApiClient.instance.get(
-        '/users/me',
-      );
+      final response = await ApiClient.instance.get('/users/me');
+
       if (response.statusCode == 200) {
-        final json = jsonDecode(response) as Map<String, dynamic>;
-        return User.fromJson(json);
+        final json = response.data as Map<String, dynamic>;
+        final user = User.fromJson(json);
+
+        _user = user;
+        return user;
       }
+
+      throw Exception('Failed to fetch user');
     } catch (e) {
       _user = null;
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
