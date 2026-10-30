@@ -10,10 +10,11 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _user != null;
 
-  Future handleLogin(String email, String password) async {
+  Future<User> handleLogin(String email, String password) async {
     debugPrint('Email: $email');
     debugPrint('Password: $password');
     _isLoading = true;
+    notifyListeners();
     try {
       final response = await ApiClient.instance.post(
         '/auth/login',
@@ -22,14 +23,16 @@ class AuthProvider extends ChangeNotifier {
       if (response.statusCode == 200) {
         final json = response.data as Map<String, dynamic>;
         final user = User.fromJson(json);
-
         _user = user;
         return user;
       }
+      throw Exception('Failed to login');
     } catch (e) {
       debugPrint('Login error: $e');
+      rethrow;
     } finally {
       _isLoading = false;
+      notifyListeners();
     }
   }
 
@@ -56,6 +59,19 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future handleLogout() async {
+    try {
+      final response = await ApiClient.instance.post(
+        '/auth/logout'
+      );
+      if (response.statusCode == 200) {
+        clearUser();
+      }
+    } catch (e) {
+      debugPrint('Login error: $e');
+    } 
   }
 
   void clearUser() {

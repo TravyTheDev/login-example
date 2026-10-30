@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/pages/login.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_application_1/auth/auth_provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -71,6 +80,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
     //
@@ -106,14 +116,27 @@ class _MyHomePageState extends State<MyHomePage> {
           // wireframe for each widget.
           mainAxisAlignment: .center,
           children: [
+            if (authProvider.user != null) ...[
+              Text(
+                'Hello, ${authProvider.user!.username}!',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+            ],
             ElevatedButton(onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute<void>(
-                  builder: (context) => const LoginPage(),
-                ),
-              );
-            }, child: const Text('Login'),)
+              if (authProvider.user == null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (context) => const LoginPage(),
+                  ),
+                );
+              } else {
+                authProvider.handleLogout();
+              }
+            }, child: Text(
+              authProvider.user != null ? 'Logout'  : 'Login'
+            ),)
           ],
         ),
       ),
